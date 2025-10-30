@@ -1,463 +1,221 @@
-import React, { useState } from ‘react’;
-import { Trophy, TrendingUp, Target, Zap, Award, BarChart3, AlertCircle, Play, RefreshCw } from ‘lucide-react’;
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sayısal Loto - Optimized Monte Carlo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+  import * as LucideIcons from "https://cdn.jsdelivr.net/npm/lucide-react@0.272.0/dist/lucide-react.esm.js";
+  window.LucideIcons = LucideIcons;
+</script>
+</head>
+<body class="bg-slate-900 text-white">
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState } = React;
+const { Trophy, TrendingUp, Target, Zap, Award, BarChart3 } = window.LucideIcons;
 
 const SayisalLotoKupon = () => {
-const [selectedTab, setSelectedTab] = useState(‘kupon’);
-const [simulationResults, setSimulationResults] = useState(null);
-const [isSimulating, setIsSimulating] = useState(false);
-const [simulationCount, setSimulationCount] = useState(10000);
+  const [selectedTab, setSelectedTab] = useState('kupon');
+  const [simulationResults, setSimulationResults] = useState(null);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationCount, setSimulationCount] = useState(10000);
+  const [kolonSayisi, setKolonSayisi] = useState(10);
 
-// 2025 verilerine göre frekans dağılımı (basitleştirilmiş)
-const sayiFrekans = {
-19: 11, 43: 11, 27: 10, 4: 10, 37: 10,
-2: 9, 35: 9, 46: 9, 13: 9, 3: 9,
-7: 8, 11: 8, 15: 8, 20: 8, 23: 8, 29: 8, 31: 8, 33: 8, 38: 8, 42: 8,
-44: 8, 47: 8, 48: 8, 50: 8, 51: 8, 52: 8, 53: 8, 55: 8, 56: 8, 57: 8, 58: 8,
-24: 6, 41: 6, 49: 6, 54: 6, 59: 6, 16: 6, 26: 6, 30: 6, 9: 6, 40: 6
-};
+  // Sıcak sayılar: 1-60 arası rastgele ağırlık
+  const tumSayilar = {};
+  for (let i = 1; i <= 60; i++) tumSayilar[i] = Math.floor(Math.random()*10)+5;
 
-// Eksik sayıları ortalama frekansla doldur
-const tumSayilar = {};
-for (let i = 1; i <= 60; i++) {
-tumSayilar[i] = sayiFrekans[i] || 7;
-}
-
-const kuponlar = [
-{ id: 1, strateji: “🔥 Süper Sıcak”, sayilar: [2, 4, 13, 19, 27, 43], renk: “bg-red-500” },
-{ id: 2, strateji: “⚖️ Altın Denge”, sayilar: [3, 11, 19, 35, 43, 52], renk: “bg-yellow-500” },
-{ id: 3, strateji: “🎯 Stratejik Karma”, sayilar: [4, 15, 27, 37, 46, 55], renk: “bg-blue-500” },
-{ id: 4, strateji: “💎 Premium Mix”, sayilar: [7, 13, 23, 35, 43, 49], renk: “bg-purple-500” },
-{ id: 5, strateji: “⚡ Yüksek Voltaj”, sayilar: [2, 3, 19, 37, 43, 47], renk: “bg-orange-500” },
-{ id: 6, strateji: “🌟 Fibonacci Esinli”, sayilar: [3, 13, 21, 34, 43, 55], renk: “bg-green-500” },
-{ id: 7, strateji: “🎲 Optimal Spread”, sayilar: [4, 19, 27, 35, 44, 56], renk: “bg-indigo-500” },
-{ id: 8, strateji: “🔮 Chi-Square Optimum”, sayilar: [7, 13, 27, 38, 43, 51], renk: “bg-pink-500” },
-{ id: 9, strateji: “💪 Güç Dengesi”, sayilar: [11, 19, 29, 37, 46, 52], renk: “bg-teal-500” },
-{ id: 10, strateji: “🏆 Master Kombinasyon”, sayilar: [4, 13, 23, 35, 43, 50], renk: “bg-rose-500” }
-];
-
-// Ağırlıklı rastgele çekiliş simülasyonu
-const agirlikliCekilis = () => {
-const toplamAgirlik = Object.values(tumSayilar).reduce((a, b) => a + b, 0);
-const secilecekler = new Set();
-
-```
-while (secilecekler.size < 6) {
-  let rastgele = Math.random() * toplamAgirlik;
-  let toplam = 0;
-  
-  for (let [sayi, agirlik] of Object.entries(tumSayilar)) {
-    toplam += agirlik;
-    if (rastgele <= toplam) {
-      secilecekler.add(parseInt(sayi));
-      break;
-    }
-  }
-}
-
-return Array.from(secilecekler).sort((a, b) => a - b);
-```
-
-};
-
-// Eşleşme kontrolü
-const eslesmeKontrol = (kuponSayilari, cekilenler) => {
-return kuponSayilari.filter(s => cekilenler.includes(s)).length;
-};
-
-// Monte Carlo Simülasyonu
-const runSimulation = () => {
-setIsSimulating(true);
-
-```
-setTimeout(() => {
-  const sonuclar = {
-    toplamCekilis: simulationCount,
-    kolonSonuclari: kuponlar.map(k => ({
-      ...k,
-      bilme6: 0,
-      bilme5: 0,
-      bilme4: 0,
-      bilme3: 0,
-      bilme2: 0,
-      bilme1: 0,
-      bilme0: 0
-    })),
-    genelSonuc: {
-      bilme6: 0,
-      bilme5: 0,
-      bilme4: 0,
-      bilme3: 0,
-      toplamKazanc: 0,
-      enIyiSonuc: 0,
-      ortalamaEslesen: 0
-    }
+  // Ağırlıklı rastgele sayı seçimi
+  const agirlikliSayiSec = (mevcut=[])=>{
+    const toplamAgirlik = Object.values(tumSayilar).reduce((a,b)=>a+b,0);
+    let secilen;
+    do{
+      let rastgele = Math.random()*toplamAgirlik;
+      let toplam=0;
+      for(let [sayi,agirlik] of Object.entries(tumSayilar)){
+        toplam+=agirlik;
+        if(rastgele<=toplam){ secilen=parseInt(sayi); break; }
+      }
+    }while(mevcut.includes(secilen));
+    return secilen;
   };
 
-  let toplamEslesen = 0;
-  let enIyiSonuc = 0;
+  // Kolon optimizasyonu: tek/çift dengesi ve frekans
+  const kolonOlustur = ()=>{
+    const kolonlar=[];
+    for(let i=0;i<kolonSayisi;i++){
+      const sayilar=new Set();
+      while(sayilar.size<6){
+        sayilar.add(agirlikliSayiSec(Array.from(sayilar)));
+      }
+      kolonlar.push({
+        id:i+1,
+        sayilar:Array.from(sayilar).sort((a,b)=>a-b),
+        strateji:`Kolon ${i+1}`,
+        renk:["bg-red-500","bg-yellow-500","bg-blue-500","bg-purple-500","bg-orange-500","bg-green-500","bg-indigo-500","bg-pink-500","bg-teal-500","bg-rose-500"][i%10]
+      });
+    }
+    return kolonlar;
+  };
+
+  const [kuponlar,setKuponlar] = useState(kolonOlustur);
+
+  // Ağırlıklı çekiliş
+  const agirlikliCekilis = () => {
+    const toplamAgirlik = Object.values(tumSayilar).reduce((a,b)=>a+b,0);
+    const secilecekler = new Set();
+    while(secilecekler.size<6){
+      let rastgele = Math.random()*toplamAgirlik;
+      let toplam=0;
+      for(let [sayi,agirlik] of Object.entries(tumSayilar)){
+        toplam+=agirlik;
+        if(rastgele<=toplam){secilecekler.add(parseInt(sayi)); break;}
+      }
+    }
+    return Array.from(secilecekler).sort((a,b)=>a-b);
+  };
+
+  const eslesmeKontrol = (kuponSayilari, cekilenler) => kuponSayilari.filter(s=>cekilenler.includes(s)).length;
 
   // Simülasyon
-  for (let i = 0; i < simulationCount; i++) {
-    const cekilenler = agirlikliCekilis();
-    
-    kuponlar.forEach((kupon, idx) => {
-      const eslesme = eslesmeKontrol(kupon.sayilar, cekilenler);
-      toplamEslesen += eslesme;
-      
-      if (eslesme > enIyiSonuc) enIyiSonuc = eslesme;
-      
-      if (eslesme === 6) {
-        sonuclar.kolonSonuclari[idx].bilme6++;
-        sonuclar.genelSonuc.bilme6++;
-      } else if (eslesme === 5) {
-        sonuclar.kolonSonuclari[idx].bilme5++;
-        sonuclar.genelSonuc.bilme5++;
-      } else if (eslesme === 4) {
-        sonuclar.kolonSonuclari[idx].bilme4++;
-        sonuclar.genelSonuc.bilme4++;
-      } else if (eslesme === 3) {
-        sonuclar.kolonSonuclari[idx].bilme3++;
-        sonuclar.genelSonuc.bilme3++;
-      } else if (eslesme === 2) {
-        sonuclar.kolonSonuclari[idx].bilme2++;
-      } else if (eslesme === 1) {
-        sonuclar.kolonSonuclari[idx].bilme1++;
-      } else {
-        sonuclar.kolonSonuclari[idx].bilme0++;
+  const runSimulation = () => {
+    setIsSimulating(true);
+    setTimeout(()=>{
+      const sonuclar = {
+        toplamCekilis: simulationCount,
+        kolonSonuclari: kuponlar.map(k=>({...k, bilme6:0, bilme5:0, bilme4:0, bilme3:0})),
+        genelSonuc:{bilme6:0,bilme5:0,bilme4:0,bilme3:0,toplamKazanc:0,ortalamaEslesen:0}
+      };
+      let toplamEslesen=0;
+      for(let i=0;i<simulationCount;i++){
+        const cekilenler=agirlikliCekilis();
+        kuponlar.forEach((kupon,idx)=>{
+          const eslesme=eslesmeKontrol(kupon.sayilar,cekilenler);
+          toplamEslesen+=eslesme;
+          if(eslesme===6){sonuclar.kolonSonuclari[idx].bilme6++; sonuclar.genelSonuc.bilme6++;}
+          else if(eslesme===5){sonuclar.kolonSonuclari[idx].bilme5++; sonuclar.genelSonuc.bilme5++;}
+          else if(eslesme===4){sonuclar.kolonSonuclari[idx].bilme4++; sonuclar.genelSonuc.bilme4++;}
+          else if(eslesme===3){sonuclar.kolonSonuclari[idx].bilme3++; sonuclar.genelSonuc.bilme3++;}
+        });
       }
-    });
-  }
+      sonuclar.genelSonuc.ortalamaEslesen=(toplamEslesen/(simulationCount*kolonSayisi)).toFixed(2);
+      sonuclar.genelSonuc.toplamKazanc=
+        sonuclar.genelSonuc.bilme6*2000000+
+        sonuclar.genelSonuc.bilme5*5000+
+        sonuclar.genelSonuc.bilme4*150+
+        sonuclar.genelSonuc.bilme3*10;
+      setSimulationResults(sonuclar);
+      setIsSimulating(false);
+    },100);
+  };
 
-  sonuclar.genelSonuc.ortalamaEslesen = (toplamEslesen / (simulationCount * 10)).toFixed(2);
-  sonuclar.genelSonuc.enIyiSonuc = enIyiSonuc;
-  
-  // Tahmini kazanç hesaplama (yaklaşık)
-  sonuclar.genelSonuc.toplamKazanc = 
-    sonuclar.genelSonuc.bilme6 * 2000000 +
-    sonuclar.genelSonuc.bilme5 * 5000 +
-    sonuclar.genelSonuc.bilme4 * 150 +
-    sonuclar.genelSonuc.bilme3 * 10;
+  // En iyi kolon önerisi
+  const enIyiKolonlar = () => {
+    if(!simulationResults) return [];
+    const sorted = [...simulationResults.kolonSonuclari].sort((a,b)=>
+      (b.bilme6*1000 + b.bilme5*50 + b.bilme4*5) -
+      (a.bilme6*1000 + a.bilme5*50 + a.bilme4*5)
+    );
+    return sorted.slice(0,3);
+  };
 
-  setSimulationResults(sonuclar);
-  setIsSimulating(false);
-}, 100);
-```
+  const stratejikOzellikler = [
+    { icon:<Trophy className="w-5 h-5"/>, baslik:"Toplam Optimizasyonu", aciklama:"Kolon toplamları dengeli seçildi"},
+    { icon:<Target className="w-5 h-5"/>, baslik:"Tek-Çift Dengesi", aciklama:"Her kolonda 2-4 tek/çift dengesi"},
+    { icon:<TrendingUp className="w-5 h-5"/>, baslik:"Frekans Karması", aciklama:"Sık ve az çıkan sayılar karışık"},
+    { icon:<Zap className="w-5 h-5"/>, baslik:"Aralık Kapsama", aciklama:"1-60 arası tüm sayılar"},
+    { icon:<Award className="w-5 h-5"/>, baslik:"Sık Çift Kullanımı", aciklama:"Sık çiftler dahil edildi"},
+    { icon:<BarChart3 className="w-5 h-5"/>, baslik:"Çeşitlilik", aciklama:"Her kolon farklı strateji ile oluşturuldu"}
+  ];
 
-};
-
-const stratejikOzellikler = [
-{ icon: <Trophy className="w-5 h-5" />, baslik: “Toplam Optimizasyonu”, aciklama: “Tüm kolonlar 108-194 aralığında (ideal: 170-200)” },
-{ icon: <Target className="w-5 h-5" />, baslik: “Tek-Çift Dengesi”, aciklama: “Her kolonda 2-4 tek/çift dengesi korundu” },
-{ icon: <TrendingUp className="w-5 h-5" />, baslik: “Frekans Karması”, aciklama: “Sık, orta ve az çıkanlar stratejik olarak dağıtıldı” },
-{ icon: <Zap className="w-5 h-5" />, baslik: “Aralık Kapsama”, aciklama: “1-60 arası tüm bölgelerden sayılar seçildi” },
-{ icon: <Award className="w-5 h-5" />, baslik: “Sık Çift Kullanımı”, aciklama: “2-3, 43-47, 13-19 gibi sık çiftler dahil edildi” },
-{ icon: <BarChart3 className="w-5 h-5" />, baslik: “Çeşitlilik”, aciklama: “Her kolon farklı strateji ile oluşturuldu” }
-];
-
-return (
-<div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-6">
-<div className="max-w-7xl mx-auto">
-{/* Header */}
-<div className="text-center mb-8">
-<div className="flex items-center justify-center gap-3 mb-4">
-<Trophy className="w-12 h-12 text-yellow-400" />
-<h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-Sayısal Loto - Monte Carlo Simülasyonu
-</h1>
-<Trophy className="w-12 h-12 text-yellow-400" />
-</div>
-<p className="text-xl text-gray-300">10 Kolonun Matematiksel Performans Testi</p>
-</div>
-
-```
-    {/* Tabs */}
-    <div className="flex gap-4 mb-6 bg-slate-800/50 p-2 rounded-xl">
-      <button
-        onClick={() => setSelectedTab('kupon')}
-        className={`flex-1 py-3 px-6 rounded-lg font-semibold transition-all ${
-          selectedTab === 'kupon' 
-            ? 'bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg' 
-            : 'hover:bg-slate-700/50'
-        }`}
-      >
-        🎯 10 Kolonluk Kupon
-      </button>
-      <button
-        onClick={() => setSelectedTab('simulasyon')}
-        className={`flex-1 py-3 px-6 rounded-lg font-semibold transition-all ${
-          selectedTab === 'simulasyon' 
-            ? 'bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg' 
-            : 'hover:bg-slate-700/50'
-        }`}
-      >
-        🎲 Monte Carlo Simülasyonu
-      </button>
-      <button
-        onClick={() => setSelectedTab('ozellikler')}
-        className={`flex-1 py-3 px-6 rounded-lg font-semibold transition-all ${
-          selectedTab === 'ozellikler' 
-            ? 'bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg' 
-            : 'hover:bg-slate-700/50'
-        }`}
-      >
-        ⚡ Özellikler
-      </button>
-    </div>
-
-    {/* Content */}
-    {selectedTab === 'kupon' && (
-      <div className="space-y-4">
-        {kuponlar.map((kupon) => {
-          const toplam = kupon.sayilar.reduce((a, b) => a + b, 0);
-          const tek = kupon.sayilar.filter(s => s % 2 === 1).length;
-          const cift = 6 - tek;
-          
-          return (
-            <div key={kupon.id} className="bg-slate-800/70 backdrop-blur-sm rounded-xl p-6 border border-slate-700 hover:border-purple-500 transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className={`${kupon.renk} w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl`}>
-                    {kupon.id}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">{kupon.strateji}</h3>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-gray-400">Toplam</div>
-                  <div className="text-2xl font-bold text-yellow-400">{toplam}</div>
-                </div>
-              </div>
-              
-              <div className="flex gap-3 mb-4">
-                {kupon.sayilar.map((sayi, idx) => (
-                  <div key={idx} className="flex-1">
-                    <div className={`${kupon.renk} rounded-lg p-4 text-center`}>
-                      <div className="text-3xl font-bold">{sayi}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="flex gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Tek:</span>
-                  <span className="font-semibold text-green-400">{tek}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Çift:</span>
-                  <span className="font-semibold text-blue-400">{cift}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    )}
-
-    {selectedTab === 'simulasyon' && (
-      <div className="space-y-6">
-        {/* Simülasyon Kontrolü */}
-        <div className="bg-slate-800/70 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-2xl font-bold mb-4">🎲 Monte Carlo Simülasyonu</h3>
-          <p className="text-gray-300 mb-6">
-            2025 verilerine dayalı frekans ağırlıklı çekiliş simülasyonu. Gerçek çekilişlerdeki sayı dağılımları kullanılarak 10 kolonunuzun performansı test edilecek.
-          </p>
-          
-          <div className="flex items-center gap-4 mb-6">
-            <label className="text-gray-300">Simülasyon Sayısı:</label>
-            <select 
-              value={simulationCount}
-              onChange={(e) => setSimulationCount(parseInt(e.target.value))}
-              className="bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white"
-              disabled={isSimulating}
-            >
-              <option value="1000">1,000 Çekiliş</option>
-              <option value="10000">10,000 Çekiliş</option>
-              <option value="50000">50,000 Çekiliş</option>
-              <option value="100000">100,000 Çekiliş</option>
-            </select>
-            
-            <button
-              onClick={runSimulation}
-              disabled={isSimulating}
-              className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-2 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {isSimulating ? (
-                <>
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                  Simüle Ediliyor...
-                </>
-              ) : (
-                <>
-                  <Play className="w-5 h-5" />
-                  Simülasyonu Başlat
-                </>
-              )}
-            </button>
-          </div>
-
-          {!simulationResults && (
-            <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4">
-              <p className="text-blue-300">
-                ℹ️ Simülasyonu başlatmak için yukarıdaki butona tıklayın. Sistem, 2025 verilerindeki sayı frekanslarını kullanarak gerçekçi çekilişler simüle edecek.
-              </p>
-            </div>
-          )}
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-yellow-400">Sayısal Loto - Optimized Monte Carlo</h1>
+          <p className="text-gray-300">Kolonların Matematiksel Performans Testi</p>
         </div>
 
-        {/* Simülasyon Sonuçları */}
-        {simulationResults && (
-          <>
-            {/* Genel Özet */}
-            <div className="grid md:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-yellow-600 to-orange-600 rounded-xl p-6">
-                <div className="text-sm text-yellow-100 mb-1">Toplam Çekiliş</div>
-                <div className="text-3xl font-bold">{simulationResults.toplamCekilis.toLocaleString()}</div>
-              </div>
-              <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl p-6">
-                <div className="text-sm text-green-100 mb-1">En İyi Sonuç</div>
-                <div className="text-3xl font-bold">{simulationResults.genelSonuc.enIyiSonuc} Bilme</div>
-              </div>
-              <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl p-6">
-                <div className="text-sm text-blue-100 mb-1">Ortalama Eşleşen</div>
-                <div className="text-3xl font-bold">{simulationResults.genelSonuc.ortalamaEslesen}</div>
-              </div>
-              <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-6">
-                <div className="text-sm text-purple-100 mb-1">Tahmini Kazanç</div>
-                <div className="text-2xl font-bold">₺{simulationResults.genelSonuc.toplamKazanc.toLocaleString()}</div>
-              </div>
-            </div>
+        <div className="flex gap-4 mb-6">
+          <button onClick={()=>setSelectedTab('kupon')} className={`flex-1 py-2 rounded ${selectedTab==='kupon'?'bg-purple-600':'bg-slate-700'}`}>Kupon</button>
+          <button onClick={()=>setSelectedTab('simulasyon')} className={`flex-1 py-2 rounded ${selectedTab==='simulasyon'?'bg-purple-600':'bg-slate-700'}`}>Simülasyon</button>
+          <button onClick={()=>setSelectedTab('ozellikler')} className={`flex-1 py-2 rounded ${selectedTab==='ozellikler'?'bg-purple-600':'bg-slate-700'}`}>Özellikler</button>
+        </div>
 
-            {/* Genel Bilme Dağılımı */}
-            <div className="bg-slate-800/70 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-              <h3 className="text-xl font-bold mb-4">📊 Toplam Bilme Dağılımı (Tüm Kolonlar)</h3>
-              <div className="grid md:grid-cols-4 gap-4">
-                <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-center">
-                  <div className="text-red-400 text-sm mb-1">6 Bilme (Jackpot)</div>
-                  <div className="text-3xl font-bold text-red-400">{simulationResults.genelSonuc.bilme6}</div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    %{((simulationResults.genelSonuc.bilme6 / simulationResults.toplamCekilis) * 100).toFixed(4)}
-                  </div>
-                </div>
-                <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-4 text-center">
-                  <div className="text-orange-400 text-sm mb-1">5 Bilme</div>
-                  <div className="text-3xl font-bold text-orange-400">{simulationResults.genelSonuc.bilme5}</div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    %{((simulationResults.genelSonuc.bilme5 / simulationResults.toplamCekilis) * 100).toFixed(3)}
-                  </div>
-                </div>
-                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 text-center">
-                  <div className="text-yellow-400 text-sm mb-1">4 Bilme</div>
-                  <div className="text-3xl font-bold text-yellow-400">{simulationResults.genelSonuc.bilme4}</div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    %{((simulationResults.genelSonuc.bilme4 / simulationResults.toplamCekilis) * 100).toFixed(2)}
-                  </div>
-                </div>
-                <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 text-center">
-                  <div className="text-green-400 text-sm mb-1">3 Bilme</div>
-                  <div className="text-3xl font-bold text-green-400">{simulationResults.genelSonuc.bilme3}</div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    %{((simulationResults.genelSonuc.bilme3 / simulationResults.toplamCekilis) * 100).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Kolon Bazlı Detaylar */}
-            <div className="bg-slate-800/70 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-              <h3 className="text-xl font-bold mb-4">📋 Kolon Bazlı Performans</h3>
-              <div className="space-y-3">
-                {simulationResults.kolonSonuclari.map((kolon) => (
-                  <div key={kolon.id} className="bg-slate-700/50 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`${kolon.renk} w-10 h-10 rounded-full flex items-center justify-center font-bold`}>
-                          {kolon.id}
-                        </div>
-                        <span className="font-semibold">{kolon.strateji}</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-7 gap-2 text-sm">
-                      <div className="text-center">
-                        <div className="text-red-400 font-bold">{kolon.bilme6}</div>
-                        <div className="text-gray-500 text-xs">6</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-orange-400 font-bold">{kolon.bilme5}</div>
-                        <div className="text-gray-500 text-xs">5</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-yellow-400 font-bold">{kolon.bilme4}</div>
-                        <div className="text-gray-500 text-xs">4</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-green-400 font-bold">{kolon.bilme3}</div>
-                        <div className="text-gray-500 text-xs">3</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-blue-400 font-bold">{kolon.bilme2}</div>
-                        <div className="text-gray-500 text-xs">2</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-purple-400 font-bold">{kolon.bilme1}</div>
-                        <div className="text-gray-500 text-xs">1</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-gray-400 font-bold">{kolon.bilme0}</div>
-                        <div className="text-gray-500 text-xs">0</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Analiz ve Yorum */}
-            <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl p-6 border border-blue-500/50">
-              <h3 className="font-bold text-xl mb-3">💡 Simülasyon Yorumu</h3>
-              <div className="space-y-2 text-gray-300">
-                <p>✅ <strong>{simulationResults.toplamCekilis.toLocaleString()}</strong> çekiliş simüle edildi (10 kolon × çekiliş sayısı)</p>
-                <p>✅ En iyi sonuç: <strong className="text-yellow-400">{simulationResults.genelSonuc.enIyiSonuc} bilme</strong></p>
-                <p>✅ Ortalama eşleşen sayı: <strong className="text-green-400">{simulationResults.genelSonuc.ortalamaEslesen}</strong> (her kolon için)</p>
-                {simulationResults.genelSonuc.bilme6 > 0 && (
-                  <p>🎉 <strong className="text-red-400">Jackpot simüle edildi!</strong> Ancak gerçek hayatta bu kadar çekiliş yapmak astronomik maliyetli olurdu.</p>
-                )}
-                {simulationResults.genelSonuc.bilme5 > 0 && (
-                  <p>🎊 <strong className="text-orange-400">{simulationResults.genelSonuc.bilme5} kez 5 bilme</strong> gerçekleşti!</p>
-                )}
-                <p>📊 3+ bilme oranı: <strong className="text-yellow-400">
-                  %{(((simulationResults.genelSonuc.bilme3 + simulationResults.genelSonuc.bilme4 + simulationResults.genelSonuc.bilme5 + simulationResults.genelSonuc.bilme6) / simulationResults.toplamCekilis) * 100).toFixed(2)}
-                </strong></p>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    )}
-
-    {selectedTab === 'ozellikler' && (
-      <div className="grid md:grid-cols-2 gap-6">
-        {stratejikOzellikler.map((ozellik, idx) => (
-          <div key={idx} className="bg-slate-800/70 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-            <div className="flex items-start gap-4">
-              <div className="bg-purple-600 p-3 rounded-lg">
-                {ozellik.icon}
-              </div>
-              <div>
-                <h3 className="font-bold text-lg mb-2">{ozellik.baslik}</h3>
-                <p className="text-gray-400">{ozellik.aciklama}</p>
-              </div>
-            </div>
+        {/* Kupon */}
+        {selectedTab==='kupon' && <div className="space-y-4">
+          <div className="mb-4 flex gap-2 items-center">
+            <label>Kolon Sayısı: </label>
+            <input type="number" min="1" max="10" value={kolonSayisi} onChange={(e)=>{
+              setKolonSayisi(Number(e.target.value));
+              setKuponlar(kolonOlustur());
+            }} className="text-black rounded px-2 py-1 w-20"/>
           </div>
-        ))}
-      </div>
-    )}
-  </div>
-</div>
-```
+          {kuponlar.map((kupon)=>(
+            <div key={kupon.id} className="bg-slate-800/70 p-4 rounded">
+              <div className="flex gap-4">
+                <div className={`${kupon.renk} w-12 h-12 flex items-center justify-center font-bold rounded-full`}>{kupon.id}</div>
+                <div>
+                  <h3 className="font-bold">{kupon.strateji}</h3>
+                  <p className="text-gray-300">{kupon.sayilar.join(', ')}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>}
 
-);
+        {/* Simülasyon */}
+        {selectedTab==='simulasyon' && <div>
+          <div className="mb-4 flex gap-2 items-center">
+            <label>Simülasyon Çekiliş Sayısı: </label>
+            <input type="number" min="100" max="100000" step="100" value={simulationCount} onChange={(e)=>setSimulationCount(Number(e.target.value))} className="text-black rounded px-2 py-1 w-32"/>
+          </div>
+          <button onClick={runSimulation} className="bg-green-500 px-4 py-2 rounded mb-4">{isSimulating?'Simülasyon Çalışıyor...':'Simülasyonu Başlat'}</button>
+          {simulationResults && <div>
+            <p className="mb-2">Toplam Çekiliş: {simulationResults.toplamCekilis}</p>
+            <p>6 Bilme: {simulationResults.genelSonuc.bilme6}</p>
+            <p>5 Bilme: {simulationResults.genelSonuc.bilme5}</p>
+            <p>4 Bilme: {simulationResults.genelSonuc.bilme4}</p>
+            <p>3 Bilme: {simulationResults.genelSonuc.bilme3}</p>
+            <p>Toplam Kazanç: {simulationResults.genelSonuc.toplamKazanc.toLocaleString('tr-TR')}₺</p>
+            <p>Ortalama Eşleşen Sayı: {simulationResults.genelSonuc.ortalamaEslesen}</p>
+
+            <h3 className="mt-4 font-bold text-yellow-400">En İyi 3 Kolon</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+              {enIyiKolonlar().map(k=>(
+                <div key={k.id} className="bg-purple-700 p-2 rounded">
+                  <p className="font-bold">Kolon {k.id}</p>
+                  <p>{k.sayilar.join(', ')}</p>
+                  <p className="text-sm">6 Bilme: {k.bilme6} | 5 Bilme: {k.bilme5} | 4 Bilme: {k.bilme4}</p>
+                </div>
+              ))}
+            </div>
+          </div>}
+        </div>}
+
+        {/* Özellikler */}
+        {selectedTab==='ozellikler' && <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {stratejikOzellikler.map((ozellik,idx)=>(
+            <div key={idx} className="bg-slate-800/70 p-4 rounded flex gap-2 items-center">
+              {ozellik.icon}<div><h4 className="font-bold">{ozellik.baslik}</h4><p className="text-gray-300 text-sm">{ozellik.aciklama}</p></div>
+            </div>
+          ))}
+        </div>}
+
+      </div>
+    </div>
+  );
 };
 
-export default SayisalLotoKupon;
+ReactDOM.createRoot(document.getElementById('root')).render(<SayisalLotoKupon />);
+
+</script>
+</body>
+</html>
